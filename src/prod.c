@@ -12,7 +12,7 @@ extern double PreciseSums_pairwise_add_DOUBLE(double *a, int n);
 double PreciseSums_safe_log(double x){
   if (x <= 0){
     // Warning?
-    return log(DOUBLE_EPS);
+    return log(DBL_EPSILON);
   } else {
     return log(x);
   }
