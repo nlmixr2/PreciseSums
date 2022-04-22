@@ -19,7 +19,7 @@ Description: Most of the time floating point arithmetic does
   See Castaldo (2008) <doi:10.1137/070679946> for a discussion of
   accuracy), and arbitrary precision sum (adapted from the fsum in
   'Python' ; Shewchuk (1997)
-  <http://www.cs.berkeley.edu/~jrs/papers/robustr.pdf>).  In addition,
+  <https://people.eecs.berkeley.edu/~jrs/papers/robustr.pdf>).  In addition,
   products are changed to long double precision for accuracy, or
   changed into a log-sum for accuracy.
 Depends: R (>= 3.2)
