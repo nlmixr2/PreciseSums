@@ -25,8 +25,8 @@ static R_NativePrimitiveArgType PreciseSums_Sum_t[] = {
 };
 
 
-int PreciseSums_sum_get();
-int PreciseSums_prod_get();
+int PreciseSums_sum_get(void);
+int PreciseSums_prod_get(void);
 
 void R_init_PreciseSums(DllInfo *info){
   R_CallMethodDef callMethods[]  = {

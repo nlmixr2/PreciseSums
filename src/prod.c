@@ -24,7 +24,7 @@ extern void PreciseSums_prod_set(int i){
   PreciseSums_prod_type = i;
 }
 
-extern int PreciseSums_prod_get(){
+extern int PreciseSums_prod_get(void){
   return PreciseSums_prod_type;
 }
 

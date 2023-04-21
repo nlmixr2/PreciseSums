@@ -355,7 +355,7 @@ extern void PreciseSums_sum_set(int i){
   PreciseSums_sum_type = i;
 }
 
-extern int PreciseSums_sum_get(){
+extern int PreciseSums_sum_get(void){
   return PreciseSums_sum_type;
 }
 
