@@ -1,0 +1,5 @@
+# PreciseSums 0.6
+
+* Updated linkage for C.
+
+* Added a `NEWS.md` file to track changes to the package.
