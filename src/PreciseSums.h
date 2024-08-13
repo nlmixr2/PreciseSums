@@ -20,46 +20,29 @@
 extern "C" {
 #endif
 
-  typedef double (*PreciseSums_sum_type)(double*, int);
-  extern PreciseSums_sum_type PreciseSums_sum;
-
-  typedef double (*PreciseSums_prod_type)(double*, int);
-  extern PreciseSums_prod_type PreciseSums_prod;
-
-  typedef double (*PreciseSums_prod_r_type)(double*, double*, int, int);
-  extern PreciseSums_prod_r_type PreciseSums_prod_r;
-
-  typedef double (*PreciseSums_sum_r_type)(double*, int, double*, int, int);
-  extern PreciseSums_sum_r_type PreciseSums_sum_r;
-
-  typedef int (*PreciseSums_sum_get_type)(void);
-  extern PreciseSums_sum_get_type PreciseSums_sum_get;
-
-  typedef int (*PreciseSums_prod_get_type)(void);
-  extern PreciseSums_prod_get_type PreciseSums_prod_get;
-
-
-  static inline void iniPreciseSumsPtr0(SEXP ptrLst) {
-    if (PreciseSums_sum == NULL) {
-      PreciseSums_sum = (PreciseSums_sum_type) R_ExternalPtrAddr(VECTOR_ELT(ptrLst, 0));
-      PreciseSums_prod = (PreciseSums_prod_type) R_ExternalPtrAddr(VECTOR_ELT(ptrLst, 1));
-      PreciseSums_sum_r = (PreciseSums_sum_r_type) R_ExternalPtrAddr(VECTOR_ELT(ptrLst, 2));
-      PreciseSums_prod_r = (PreciseSums_prod_r_type) R_ExternalPtrAddr(VECTOR_ELT(ptrLst, 3));
-      PreciseSums_sum_get = (PreciseSums_sum_get_type) R_ExternalPtrAddr(VECTOR_ELT(ptrLst, 4));
-      PreciseSums_prod_get = (PreciseSums_prod_get_type) R_ExternalPtrAddr(VECTOR_ELT(ptrLst, 5));
-    }
+  double PreciseSums_sum(double* input, int len){
+    static double (*fun)(double*, int)=NULL;
+    if (fun == NULL) fun = (double(*)(double*, int)) R_GetCCallable("PreciseSums","PreciseSums_sum");
+    return fun(input, len);
   }
-  #define iniPreciseSums \
-    PreciseSums_sum_type PreciseSums_sum; \
-    PreciseSums_prod_type PreciseSums_prod; \
-    PreciseSums_sum_r_type PreciseSums_sum_r; \
-    PreciseSums_prod_r_type PreciseSums_prod_r; \
-    PreciseSums_sum_get_type PreciseSums_sum_get; \
-    PreciseSums_prod_get_type PreciseSums_prod_get; \
-    SEXP iniPreciseSumsPtr(SEXP ptr) { \
-      iniPreciseSumsPtr0(ptr); \
-      return R_NilValue; \
-    }
+
+  double PreciseSums_prod(double* input, int len){
+    static double (*fun)(double*, int)=NULL;
+    if (fun == NULL) fun = (double(*)(double*, int)) R_GetCCallable("PreciseSums","PreciseSums_prod");
+    return fun(input, len);
+  }
+
+  double PreciseSums_prod_r(double *input, double *p, int n, int type){
+    static double (*fun)(double*, double*, int, int)=NULL;
+    if (fun == NULL) fun = (double(*)(double*, double*, int, int)) R_GetCCallable("PreciseSums","PreciseSums_prod_r");
+    return fun(input, p, n, type);
+  }
+
+  double PreciseSums_sum_r(double *input, int n, long double *p, int m, int type){
+    static double (*fun)(double *, int, long double *, int, int)=NULL;
+    if (fun == NULL) fun = (double(*)(double *, int, long double *, int, int)) R_GetCCallable("PreciseSums","PreciseSums_sum_r");
+    return fun(input, n, p, m, type);
+  }
 
 #if defined(__cplusplus)
 }

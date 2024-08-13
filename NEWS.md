@@ -1,8 +1,9 @@
 # PreciseSums 0.7
 
-* Changed binary linkage to function pointer linkage so `PreciseSums`
-  can be updated without requiring `rxode2` to be re-submitted as
-  well.
+* Created a new non-binary linkage method with 'PreciseSumsPtr.h' in
+  addition to 'PreciseSums.h'.  To break binary package dependencies,
+  the `rxode2` internals use the function pointers, while the models
+  built by `rxode2` use the binary linkage.
 
 # PreciseSums 0.6
 
