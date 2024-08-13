@@ -154,3 +154,18 @@ psSetProd <- function(type=c("long double", "double", "logify")){
 psProd <- function(numbers) {
     .Call(`_psProd`, as.double(numbers))
 }
+#' Get the function pointers to link in C
+#'
+#' This allows the user to use the C functions in their own C/C++
+#' packages without binary linking to PreciseSums.
+#'
+#'
+#' @return list of function pointers
+#' @export
+#' @author Matthew L. Fidler
+#' @keywords internal
+#' @examples
+#' .preciseSumsPtr()
+.preciseSumsPtr <- function() {
+  .Call(`_PreciseSumsPtr`)
+}
