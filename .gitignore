@@ -2,3 +2,4 @@
 *.so
 /src/.Rhistory
 revdep/
+/.Rhistory
