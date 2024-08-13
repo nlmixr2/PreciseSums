@@ -15,3 +15,5 @@
 ^\.travis\.yml$
 ^\.github$
 ^revdep$
+^CRAN-SUBMISSION$
+^cran-comments\.md$
