@@ -41,12 +41,12 @@ extern "C" {
 
   static inline void iniPreciseSumsPtr0(SEXP ptrLst) {
     if (PreciseSums_sum == NULL) {
-      PreciseSums_sum = (PreciseSums_sum_type) R_ExternalPtrAddr(VECTOR_ELT(ptrLst, 0));
-      PreciseSums_prod = (PreciseSums_prod_type) R_ExternalPtrAddr(VECTOR_ELT(ptrLst, 1));
-      PreciseSums_sum_r = (PreciseSums_sum_r_type) R_ExternalPtrAddr(VECTOR_ELT(ptrLst, 2));
-      PreciseSums_prod_r = (PreciseSums_prod_r_type) R_ExternalPtrAddr(VECTOR_ELT(ptrLst, 3));
-      PreciseSums_sum_get = (PreciseSums_sum_get_type) R_ExternalPtrAddr(VECTOR_ELT(ptrLst, 4));
-      PreciseSums_prod_get = (PreciseSums_prod_get_type) R_ExternalPtrAddr(VECTOR_ELT(ptrLst, 5));
+      PreciseSums_sum = (PreciseSums_sum_type) R_ExternalPtrAddrFn(VECTOR_ELT(ptrLst, 0));
+      PreciseSums_prod = (PreciseSums_prod_type) R_ExternalPtrAddrFn(VECTOR_ELT(ptrLst, 1));
+      PreciseSums_sum_r = (PreciseSums_sum_r_type) R_ExternalPtrAddrFn(VECTOR_ELT(ptrLst, 2));
+      PreciseSums_prod_r = (PreciseSums_prod_r_type) R_ExternalPtrAddrFn(VECTOR_ELT(ptrLst, 3));
+      PreciseSums_sum_get = (PreciseSums_sum_get_type) R_ExternalPtrAddrFn(VECTOR_ELT(ptrLst, 4));
+      PreciseSums_prod_get = (PreciseSums_prod_get_type) R_ExternalPtrAddrFn(VECTOR_ELT(ptrLst, 5));
     }
   }
   #define iniPreciseSums \
