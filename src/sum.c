@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#define R_NO_REMAP
 #include <R.h>
 #include <Rinternals.h>
 #include <Rmath.h> //Rmath includes math.
@@ -87,9 +88,9 @@ PreciseSums_pairwise_add_DOUBLE(double *a, int n)
 }
 
 SEXP _psPairwiseSum(SEXP input){
-  int len = length(input);
+  int len = Rf_length(input);
   double *dinput = REAL(input);
-  SEXP rets = PROTECT(allocVector(REALSXP,1));
+  SEXP rets = PROTECT(Rf_allocVector(REALSXP,1));
   REAL(rets)[0] = PreciseSums_pairwise_add_DOUBLE(dinput, len);
   UNPROTECT(1);
   return rets;
@@ -102,7 +103,7 @@ extern double PreciseSums_KahanSum(double *input, int len){
   int i;
 
   for (i = 0; i < len; i++){
-    y = (double)input[i] - c; 
+    y = (double)input[i] - c;
     t = sum + y;
     c = (t - sum) - y;       // (t - sum) cancels the high-order part of y; subtracting y recovers negative (low part of y)
     sum = t;                 // Algebraically, c should always be zero. Beware overly-aggressive optimizing compilers!
@@ -111,9 +112,9 @@ extern double PreciseSums_KahanSum(double *input, int len){
 }
 
 SEXP _psKahanSum(SEXP input){
-  int len = length(input);
+  int len = Rf_length(input);
   double *dinput = REAL(input);
-  SEXP rets = PROTECT(allocVector(REALSXP,1));
+  SEXP rets = PROTECT(Rf_allocVector(REALSXP,1));
   REAL(rets)[0] = PreciseSums_KahanSum(dinput, len);
   UNPROTECT(1);
   return rets;
@@ -159,9 +160,9 @@ extern double PreciseSums_KleinSum(double *input, int len){
 }
 
 SEXP _psNeumaierSum(SEXP input){
-  int len = length(input);
+  int len = Rf_length(input);
   double *dinput = REAL(input);
-  SEXP rets = PROTECT(allocVector(REALSXP,1));
+  SEXP rets = PROTECT(Rf_allocVector(REALSXP,1));
   REAL(rets)[0] = PreciseSums_NeumaierSum(dinput, len);
   UNPROTECT(1);
   return rets;
@@ -194,8 +195,8 @@ extern double PreciseSums_Python_fsum_r(double *iterable, int iterable_len, doub
         p[i++] = lo;
       x = hi;
     }
-    
-    n = i; 
+
+    n = i;
     if (x != 0.0) {
       if (!R_FINITE(x)) {
         /* a nonfinite x could arise either as
@@ -203,7 +204,7 @@ extern double PreciseSums_Python_fsum_r(double *iterable, int iterable_len, doub
            as a result of a nan or inf in the
            summands */
         if (R_FINITE(xsave) || ISNAN(xsave)) {
-	  if (m > 0) Free(p);
+	  if (m > 0) R_Free(p);
 	  return PreciseSums_KleinSum(iterable, iterable_len);
           /* error("intermediate overflow in fsum"); */
         } else {
@@ -217,9 +218,9 @@ extern double PreciseSums_Python_fsum_r(double *iterable, int iterable_len, doub
           //&& _fsum_realloc(&p, n, ps, &m)
           // Doubles the size of array.
           m += m;
-          p = Realloc(p, m, double);
+          p = R_Realloc(p, m, double);
         } else if (m < 0 && n >= -m){
-	  /* if (m > 0) Free(p); */
+	  /* if (m > 0) R_Free(p); */
 	  return PreciseSums_KleinSum(iterable, iterable_len);
 	  /* error("The size of the saved partials is too small to calculate the sum."); */
 	}
@@ -229,8 +230,8 @@ extern double PreciseSums_Python_fsum_r(double *iterable, int iterable_len, doub
   }
   if (special_sum != 0.0) {
     if (ISNAN(inf_sum)){
-      if (m > 0) Free(p);
-      error("-inf + inf in fsum");
+      if (m > 0) R_Free(p);
+      Rf_error("-inf + inf in fsum");
     }
     sum = special_sum;
     return sum;
@@ -246,7 +247,7 @@ extern double PreciseSums_Python_fsum_r(double *iterable, int iterable_len, doub
       x = hi;
       y = p[--n];
       if (fabs(y) >= fabs(x)){
-	if (m > 0) Free(p);
+	if (m > 0) R_Free(p);
 	return PreciseSums_KleinSum(iterable, iterable_len);
         /* Rprintf("Partial Sums:\n"); */
         /* for (i = 0; i < j; i++){ */
@@ -254,7 +255,7 @@ extern double PreciseSums_Python_fsum_r(double *iterable, int iterable_len, doub
         /* } */
         /* Rprintf("Assertion Error:\n"); */
         /* Rprintf("fabs(y) >= fabs(x) or %f >= %f\n",fabs(y),fabs(x)); */
-        /* if (m > 0) Free(p); */
+        /* if (m > 0) R_Free(p); */
         /* error("Error in parital sums."); */
       }
       hi = x + y;
@@ -282,17 +283,17 @@ extern double PreciseSums_Python_fsum_r(double *iterable, int iterable_len, doub
 }
 
 extern double PreciseSums_Python_fsum(double *iterable, int iterable_len){
-  double *p = Calloc(NUM_PARTIALS, double);
+  double *p = R_Calloc(NUM_PARTIALS, double);
   int m = NUM_PARTIALS;
   double ret = PreciseSums_Python_fsum_r(&iterable[0], iterable_len, p, m);
-  Free(p);
+  R_Free(p);
   return ret;
 }
 
 SEXP _psPythonSum(SEXP input){
-  int len = length(input);
+  int len = Rf_length(input);
   double *dinput = REAL(input);
-  SEXP rets = PROTECT(allocVector(REALSXP,1));
+  SEXP rets = PROTECT(Rf_allocVector(REALSXP,1));
   REAL(rets)[0] = PreciseSums_Python_fsum(dinput, len);
   UNPROTECT(1);
   return rets;
@@ -321,7 +322,7 @@ extern double PreciseSums_sum (double *input, int n){
   }
   //PreciseSums_KahanSum;
   // PreciseSums_NeumaierSum
-  error("Unknown sum type.");
+  Rf_error("Unknown sum type.");
   return 0;
 }
 
@@ -347,7 +348,7 @@ extern double PreciseSums_sum_r(double *input, int n, double *p, int m, int type
   }
   //PreciseSums_KahanSum;
   // PreciseSums_NeumaierSum
-  error("Unknown sum type.");
+  Rf_error("Unknown sum type.");
   return 0;
 }
 
@@ -366,9 +367,9 @@ SEXP _psSetSum(SEXP input){
 }
 
 SEXP _psSum(SEXP input){
-  int len = length(input);
+  int len = Rf_length(input);
   double *dinput = REAL(input);
-  SEXP rets = PROTECT(allocVector(REALSXP,1));
+  SEXP rets = PROTECT(Rf_allocVector(REALSXP,1));
   REAL(rets)[0] = PreciseSums_sum(dinput, len);
   UNPROTECT(1);
   return rets;
@@ -377,13 +378,13 @@ SEXP _psSum(SEXP input){
 extern double PreciseSums_sumV(int n, ...){
   va_list valist;
   va_start(valist, n);
-  double *p = Calloc(n, double);
+  double *p = R_Calloc(n, double);
   for (unsigned int i = 0; i < n; i++){
     p[i] = va_arg(valist, double);
   }
   va_end(valist);
   double s = PreciseSums_sum(p, n);
-  Free(p);
+  R_Free(p);
   return s;
 }
 

@@ -1,9 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#define R_NO_REMAP
 #include <R.h>
 #include <Rinternals.h>
 #include <Rmath.h> //Rmath includes math.
+
+// https://github.com/wch/r-source/blob/41ca75a4ffa1a4ec66f7697820fcf229b6a64f8e/src/nmath/qgamma.c#L122
+#define LN_EPS -36.043653389117156
 
 extern double PreciseSums_sum (double *input, int n);
 
@@ -12,10 +16,11 @@ extern double PreciseSums_pairwise_add_DOUBLE(double *a, int n);
 double PreciseSums_safe_log(double x){
   if (x <= 0){
     // Warning?
-    return log(DBL_EPSILON);
+    return LN_EPS;
   } else {
     return log(x);
   }
+  return LN_EPS;
 }
 
 int PreciseSums_prod_type = 3;
@@ -38,7 +43,7 @@ extern double PreciseSums_prod_ld(double *input, int n){
   long double p = 1;
   for  (int i = 0; i < n; i++){
     if (input[i] == 0){
-      return 0.0; 
+      return 0.0;
     }
     p *= input[i];
   }
@@ -49,7 +54,7 @@ extern double PreciseSums_prod_d(double *input, int n){
   double p = 1;
   for  (int i = 0; i < n; i++){
     if (input[i] == 0){
-      return 0.0; 
+      return 0.0;
     }
     p *= input[i];
   }
@@ -70,9 +75,9 @@ extern double PreciseSums_prod_logify_r(double *input, double *p, int n){
 }
 
 extern double PreciseSums_prod_logify(double *input, int n){
-  double *p = Calloc(n,double);
+  double *p = R_Calloc(n,double);
   double ret= PreciseSums_prod_logify_r(input, p, n);
-  Free(p);
+  R_Free(p);
   return ret;
 }
 
@@ -110,9 +115,9 @@ extern double PreciseSums_prod(double *input, int n){
 
 
 SEXP _psProd(SEXP input){
-  int len = length(input);
+  int len = Rf_length(input);
   double *dinput = REAL(input);
-  SEXP rets = PROTECT(allocVector(REALSXP,1));
+  SEXP rets = PROTECT(Rf_allocVector(REALSXP,1));
   REAL(rets)[0] = PreciseSums_prod(dinput, len);
   UNPROTECT(1);
   return rets;
@@ -121,13 +126,13 @@ SEXP _psProd(SEXP input){
 extern double PreciseSums_prodV(int n, ...){
   va_list valist;
   va_start(valist, n);
-  double *p = Calloc(n, double);
+  double *p = R_Calloc(n, double);
   for (int i = 0; i < n; i++){
     p[i] = va_arg(valist, double);
   }
   va_end(valist);
   double s = PreciseSums_prod(p, n);
-  Free(p);
+  R_Free(p);
   return s;
 }
 

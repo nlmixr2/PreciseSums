@@ -1,2 +1,3 @@
+PKG_CFLAGS  = -DSTRICT_R_HEADERS=1
 SOURCES_C = sum.c prod.c init.c
 OBJECTS = $(SOURCES_C:.c=.o)
