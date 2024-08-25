@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#define R_NO_REMAP
 #include <R.h>
 #include <Rinternals.h>
 #include <Rmath.h> //Rmath includes math.
@@ -40,7 +41,7 @@ SEXP _PreciseSumsPtr(void) {
   SEXP PreciseSums_sum_get_ptr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&PreciseSums_sum_get, R_NilValue, R_NilValue)); pro++;
   SEXP PreciseSums_prod_get_ptr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&PreciseSums_prod_get, R_NilValue, R_NilValue)); pro++;
 
-  SEXP ret = PROTECT(allocVector(VECSXP, 6)); pro++;
+  SEXP ret = PROTECT(Rf_allocVector(VECSXP, 6)); pro++;
   SET_VECTOR_ELT(ret, 0, PreciseSums_sum_ptr);
   SET_VECTOR_ELT(ret, 1, PreciseSums_prod_ptr);
   SET_VECTOR_ELT(ret, 2, PreciseSums_sum_r_ptr);
@@ -48,15 +49,15 @@ SEXP _PreciseSumsPtr(void) {
   SET_VECTOR_ELT(ret, 4, PreciseSums_sum_get_ptr);
   SET_VECTOR_ELT(ret, 5, PreciseSums_prod_get_ptr);
 
-  SEXP retn = PROTECT(allocVector(STRSXP, 6)); pro++;
-  SET_STRING_ELT(retn, 0, mkChar("PreciseSums_sum"));
-  SET_STRING_ELT(retn, 1, mkChar("PreciseSums_prod"));
-  SET_STRING_ELT(retn, 2, mkChar("PreciseSums_sum_r"));
-  SET_STRING_ELT(retn, 3, mkChar("PreciseSums_prod_r"));
-  SET_STRING_ELT(retn, 4, mkChar("PreciseSums_sum_get"));
-  SET_STRING_ELT(retn, 5, mkChar("PreciseSums_prod_get"));
+  SEXP retn = PROTECT(Rf_allocVector(STRSXP, 6)); pro++;
+  SET_STRING_ELT(retn, 0, Rf_mkChar("PreciseSums_sum"));
+  SET_STRING_ELT(retn, 1, Rf_mkChar("PreciseSums_prod"));
+  SET_STRING_ELT(retn, 2, Rf_mkChar("PreciseSums_sum_r"));
+  SET_STRING_ELT(retn, 3, Rf_mkChar("PreciseSums_prod_r"));
+  SET_STRING_ELT(retn, 4, Rf_mkChar("PreciseSums_sum_get"));
+  SET_STRING_ELT(retn, 5, Rf_mkChar("PreciseSums_prod_get"));
 
-  setAttrib(ret, R_NamesSymbol, retn);
+  Rf_setAttrib(ret, R_NamesSymbol, retn);
 
   UNPROTECT(pro);
   return ret;

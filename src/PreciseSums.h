@@ -11,6 +11,7 @@
 #define PS_Prod 2
 #define PS_LogifyProd 3
 
+#define R_NO_REMAP
 #include <R.h>
 #include <Rinternals.h>
 #include <Rdefines.h>
