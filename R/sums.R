@@ -47,9 +47,6 @@ neumaierSum <- function(numbers) {
 #' @references
 #'
 #' \url{https://docs.python.org/2/library/math.html}
-#'
-#' \url{https://code.activestate.com/recipes/393090/}
-#'
 #' \url{https://github.com/python/cpython/blob/a0ce375e10b50f7606cb86b072fed7d8cd574fe7/Modules/mathmodule.c}
 #'
 #' Shewchuk, JR. (1996)
