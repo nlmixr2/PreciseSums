@@ -23,3 +23,17 @@ test_that("Fsum", {
     ##  [-2.**1022],
     ##     float.fromhex('0x1.5555555555555p+970')),
 })
+
+test_that("empty input returns 0 for every sum type (no OOB read)", {
+    ## Before the fix, PreciseSums_NeumaierSum / PreciseSums_DoubleSum read
+    ## input[0] before the loop with no length guard, so these two types
+    ## crashed R (segfault) on a zero-length vector.  valgrind:
+    ## "Invalid read of size 8 at PreciseSums_NeumaierSum (sum.c)".
+    on.exit(psSetSum("pairwise"), add = TRUE) # restore default
+    for (ty in c("pairwise", "fsum", "kahan", "neumaier", "klein", "c")) {
+        psSetSum(ty)
+        expect_equal(psSum(numeric(0)), 0)
+    }
+    ## and the documented helpers
+    expect_equal(neumaierSum(numeric(0)), 0)
+})
