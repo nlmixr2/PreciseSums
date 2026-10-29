@@ -1,0 +1,171 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when
+working with code in this repository.
+
+## Overview
+
+**PreciseSums** is a small R package (GPL >= 2, maintained in the
+nlmixr2 GitHub org) providing accurate floating point sums and
+products: Kahan, Neumaier, Klein, pairwise (adapted from NumPy), and
+arbitrary precision `fsum` (adapted from Python's `math.fsum`,
+Shewchuk 1997). Products can be computed in long double or as a
+log-sum ("logify"). The package is plain R + C (no C++, no
+Rcpp). Its main consumers are `rxode2` and `nlmixr2est`, which call
+the C routines directly, so the C interface is the important public
+API.
+
+## Build and Development Commands
+
+```sh
+# Install
+R CMD INSTALL .
+
+# Regenerate man/ and NAMESPACE (roxygen2; DESCRIPTION records 8.1.0)
+Rscript -e "devtools::document()"
+
+# Run tests (remove stale objects first)
+rm -f src/*.o src/*.so; NOT_CRAN=true Rscript -e "devtools::test()"
+
+# R CMD check
+rm -f src/*.o src/*.so; Rscript -e "devtools::check()"
+```
+
+CI: `.github/workflows/R-CMD-check.yaml` runs R CMD check on macOS,
+Windows and Ubuntu (release) plus Ubuntu (devel) on push/PR to main.
+
+## Architecture
+
+### R layer (`R/sums.R`, the only R file)
+
+Thin `.Call()` wrappers; every input is coerced with `as.double()`.
+
+| R function        | `.Call` symbol     |
+|-------------------|--------------------|
+| `kahanSum()`      | `_psKahanSum`      |
+| `neumaierSum()`   | `_psNeumaierSum`   |
+| `fsum()`          | `_psPythonSum`     |
+| `pairwiseSum()`   | `_psPairwiseSum`   |
+| `psSum()`         | `_psSum` (uses the global sum type) |
+| `psProd()`        | `_psProd` (uses the global product type) |
+| `psSetSum()`      | `_psSetSum`        |
+| `psSetProd()`     | `_psSetProd`       |
+| `.preciseSumsPtr()` | `_PreciseSumsPtr` (internal, exported) |
+
+`psSetSum()` / `psSetProd()` set a process-global integer type in C
+(`PreciseSums_sum_type`, `PreciseSums_prod_type`). This state persists
+across calls and affects `psSum()`, `psProd()`, and downstream C users.
+
+### Type codes
+
+Defined in `src/PreciseSums.h` and `src/PreciseSumsPtr.h`:
+
+- Sums: `PS_PairwiseSum 1` (default), `PS_FSum 2`, `PS_KahanSum 3`,
+  `PS_NeumaierSum 4`, `PS_DoubleSum 5` (plain C sum); Klein is 6 (no
+  macro).
+- Products: `PS_ProdLD 1` (default), `PS_Prod 2`, `PS_LogifyProd 3`.
+
+Note `psSetSum()` maps names by position in
+`c("pairwise", "fsum", "kahan", "neumaier", "c", "klein")`, which is a
+different order from its formal default
+`c("pairwise", "fsum", "kahan", "neumaier", "klein", "c")`. Keep the
+R index vector in sync with the C `switch` in `src/sum.c` if adding a
+method.
+
+### C layer (`src/`)
+
+- `sum.c` -- all sum algorithms, `PreciseSums_sum()` (dispatch on the
+  global type), `PreciseSums_sum_r()` (explicit type plus caller
+  supplied partials buffer), variadic `PreciseSums_sumV()` /
+  `PreciseSums_sumV_r()`, and the `_ps*Sum` `.Call` entry points.
+- `prod.c` -- product variants, `PreciseSums_prod()`,
+  `PreciseSums_prod_r()`, variadic `PreciseSums_prodV()` /
+  `PreciseSums_prodV_r()` / `PreciseSums_signV()`.
+- `init.c` -- MANUAL registration: `R_CallMethodDef` table with
+  hardcoded arities, `R_CMethodDef` for `.C` access,
+  `R_RegisterCCallable()` exports, and `_PreciseSumsPtr()` which
+  returns a named list of 6 external function pointers.
+  `R_useDynamicSymbols(info, FALSE)` is set, so every new `.Call`
+  entry point must be added here.
+- `Makevars` -- `-DSTRICT_R_HEADERS=1`; sources listed explicitly
+  (`SOURCES_C = sum.c prod.c init.c`), so new `.c` files must be
+  added there.
+- `install.libs.R` -- custom install step that also copies `src/*.h`
+  into the installed package's `include/` directory so downstream
+  packages can `#include` them.
+
+### Two downstream linking mechanisms
+
+1. `PreciseSums.h` -- binary linkage via `R_GetCCallable()`
+   (`PreciseSums_sum`, `_prod`, `_sum_r`, `_prod_r`). Used by models
+   that `rxode2` compiles.
+2. `PreciseSumsPtr.h` (added in 0.7) -- non-binary linkage: the
+   downstream package calls `.preciseSumsPtr()` in R and passes the
+   list to its `iniPreciseSumsPtr()` (defined by the `iniPreciseSums`
+   macro). Used by `rxode2` internals so PreciseSums can be updated
+   without rebuilding dependents.
+
+The order of the pointer list in `_PreciseSumsPtr()` (sum, prod,
+sum_r, prod_r, sum_get, prod_get) is an ABI contract with
+`iniPreciseSumsPtr0()` in `PreciseSumsPtr.h`. Never reorder; only
+append, and update both files together. Changing any exported C
+signature affects `rxode2` / `nlmixr2est`.
+
+Known inconsistency: `PreciseSums.h` declares `PreciseSums_sum_r()`
+with a `long double *p` buffer while `sum.c` and `PreciseSumsPtr.h`
+use `double *p`. Be careful when touching this function.
+
+## Key Files
+
+- `DESCRIPTION` -- version, authors (multiple copyright holders for
+  ported Python/NumPy code); only Suggests is `testthat`.
+- `NAMESPACE`, `man/` -- generated by roxygen2; do not edit by hand.
+- `NEWS.md` -- update for user-visible changes.
+- `cran-comments.md` -- notes for CRAN submissions.
+- `tests/testthat/test-sum.R` -- the only test file (fsum cases ported
+  from Python's test suite).
+
+## Testing Conventions
+
+- testthat (edition 2 style; the file still uses `context()`).
+- Tests that call `psSetSum()` / `psSetProd()` change global C state;
+  reset to defaults (`psSetSum("pairwise")`, `psSetProd("long double")`)
+  if a later test depends on them.
+- Prefer exact expected values from known hard cases (cancellation,
+  values near `2^53`) over random inputs.
+
+## Code Style
+
+- ASCII only in R, C, Rd, and Markdown sources (CRAN requirement):
+  use `--`, `->`, straight quotes.
+- R code is roxygen-documented; existing files mix `#'` and `##'`.
+  Note the `pairwiseSum()` block has a stray `#' #' @examples` line.
+- C code: `#define R_NO_REMAP` and strict R headers; use `Rf_`
+  prefixed API (`Rf_error`, `Rf_allocVector`, `Rf_mkChar`).
+  Balance `PROTECT`/`UNPROTECT` with a counter as in `_PreciseSumsPtr()`.
+- All exported C symbols are prefixed `PreciseSums_`; `.Call` entry
+  points are prefixed `_ps` (or `_PreciseSums`).
+
+## Release / CRAN Cautions
+
+- This is a low-level dependency of `rxode2` and `nlmixr2est`; any C
+  API or header change needs coordination with those packages.
+- `.Rbuildignore` excludes `.github`, `cran-comments.md`, `README.md`,
+  all `*.pdf`, and `CLAUDE.md`; keep new dev-only files out of the
+  tarball.
+- Do not commit compiled `src/*.o` / `src/*.so` (ignored in
+  `.gitignore`).
+
+## CRAN tests: never assert on timing
+
+- Never put a wall-clock timing expectation in a test that can run on CRAN:
+  no `expect_lt()`/`expect_true()` on `Sys.time()` differences,
+  `system.time()`, `proc.time()`, `bench`/`microbenchmark` results, or any
+  other elapsed-time threshold. CRAN check machines are shared and heavily
+  loaded, so elapsed time there is random and a timing assertion fails at
+  random. Example: nlmixr2plot `test-model-diagram.R` asserted a
+  `modelGraph()` call took < 30 s; on CRAN it took 48.4 s and failed.
+- Test the result, not the speed. If a speed regression guard is really
+  needed, put it only in a test that starts with `skip_on_cran()` (or the
+  package's own CRAN skip helper), and never in examples or vignettes.
+- Tests that take more than a few seconds should also skip on CRAN.
