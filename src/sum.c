@@ -13,6 +13,7 @@
 //Not used: https://sourceforge.net/p/gmat/git/ci/264a12acad195e6a2467cfdc68abdcee801f73fc/tree/prototype/OptimalControl/ThirdParty/Intlab_V6/accsumdot/FastAccSum.m
 
 extern double PreciseSums_DoubleSum(double *input, int n){
+  if (n <= 0) return 0.0;
   long double sum = (long double)input[0];
   for (int i = 1; i < n; i++){
     sum += (long double)input[i];
@@ -121,6 +122,7 @@ SEXP _psKahanSum(SEXP input){
 }
 
 extern double PreciseSums_NeumaierSum(double *input, int len){
+  if (len <= 0) return 0.0;
   double sum = input[0];
   volatile double t,  c = 0.0; // A running compensation for lost low-order bits.
   int i;
